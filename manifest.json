@@ -1,0 +1,26 @@
+{
+    "name": "mumu",
+    "version": "0.0.1",
+    "description": "Multisite multicontent REST API",
+    "engines": {
+        "arangodb": "^3.0.0"
+    },
+    "author": "Andrea Di Mario",
+    "license": "MIT",
+    "main": "main.js",
+    "scripts": {
+        "setup": "scripts/setup.js",
+        "teardown": "scripts/teardown.js"
+    },
+    "configuration": {
+      "jwtSecret": {
+        "description": "The token for sessions",
+        "type": "string"
+      },
+      "sites": {
+        "description": "Json for sites available",
+        "type": "json"
+      }
+    },
+    "tests": "test/**/*.js"
+}
