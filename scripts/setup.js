@@ -1,9 +1,7 @@
 'use strict';
 const db = require('@arangodb').db;
-const documentCollections = ["users", "admins"];
+const documentCollections = ["users", "admins", "contents"];
 const edgeCollections = [];
-const createAuth = require('@arangodb/foxx/auth');
-const auth = createAuth();
 
 for (const localName of documentCollections) {
   const qualifiedName = module.context.collectionName(localName);
@@ -27,7 +25,7 @@ for (const localName of edgeCollections) {
 const users = module.context.collectionName("users"); // need to define the context otherwise it refers to a general collection
 db._collection(users).ensureIndex({
   type: 'hash',
-  fields: ['username'],
+  fields: ['hostname', 'username'],
   unique: true
 });
 const admins = module.context.collectionName("admins"); // need to define the context otherwise it refers to a general collection
@@ -36,10 +34,9 @@ db._collection(admins).ensureIndex({
   fields: ['username'],
   unique: true
 });
-// Create basic admin
-const basic_admin = {
-  username: "admin",
-  email: "test@example.com"
-};
-basic_admin.authData = auth.create("admin");
-db._collection(admins).save(basic_admin);
+const contents = module.context.collectionName("contents"); // need to define the context otherwise it refers to a general collection
+db._collection(contents).ensureIndex({
+  type: 'hash',
+  fields: ['hostname', 'slug'],
+  unique: true
+});

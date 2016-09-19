@@ -9,7 +9,8 @@ module.exports = {
   create: {
     username: joi.string().required(),
     password: password,
-    email: joi.string().email().required()
+    email: joi.string().email().required(),
+    role: joi.string().required()
   },
   login: {
     username: joi.string().required(),

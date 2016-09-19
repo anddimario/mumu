@@ -1,7 +1,7 @@
 'use strict';
 
-const createAuth = require('@arangodb/foxx/auth');
 const crypto = require('@arangodb/crypto');
+const createAuth = require('@arangodb/foxx/auth');
 const auth = createAuth();
 const users = module.context.collection('users');
 
@@ -20,6 +20,7 @@ module.exports = {
     if (!valid) {
       return {type: "error", details: 'unauthorized'};
     } else {
+      delete user.authData;
       return {type: "success", details: user};
     }
   },
@@ -37,18 +38,23 @@ module.exports = {
     }
   },
   create (user, hostname) {
-    try {
-      // Create an authentication hash
-      user.authData = auth.create(user.password);
-      user.hostname = hostname;
-      user.role = "user";
-      delete user.password;
-      const meta = users.save(user);
-      Object.assign(user, meta);
-      return {type: "success", details: user};
-    } catch (e) {
-      // We'll assume the UniqueConstraint has been violated
-      return {type: "error", details: e};
+    const roles = module.context.configuration.sites.roles;
+    // Check if it's an available roles
+    if (roles.indexOf(user.role) !== -1) {
+      try {
+        // Create an authentication hash
+        user.authData = auth.create(user.password);
+        user.hostname = hostname;
+        delete user.password;
+        const meta = users.save(user);
+        Object.assign(user, meta);
+        return {type: "success", details: user};
+      } catch (e) {
+        // We'll assume the UniqueConstraint has been violated
+        return {type: "error", details: e};
+      }
+    } else {
+      return {type: "error", details: "unauthorized"};
     }
   },
   update (username, value, hostname) {

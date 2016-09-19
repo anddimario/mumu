@@ -4,11 +4,18 @@ Users and sites management REST API with common method (manage sites, users and 
 
 ### Requirements and installation
 
-Install arangodb (^3.0.4), then import this as service. Need to setup the configuration variables, sites is an object with a list of available domains, like:
 ```
-{"hostnames":["localhost","127.0.0.1"]}
+{ 
+  "hostnames":["localhost","127.0.0.1"], 
+  "roles": ["user"]
+}
 ```
-A first admin was created with username: admin and password: admin.
+
+To Create an admin, run the script create-admin from web console with this payload:
+```
+{"username": "...", "email": "....", "password": "...", "role": "superadmin"}
+```
+Admins role: admin, is admin for the site, superadmin, is admin for all the sites.
 
 # License
 

@@ -1,8 +1,12 @@
+/*
+ * Check if hostname is enabled in sites
+ */
+
 'use strict';
 
 module.exports = function (hostname) {
-  const sites = module.context.configuration.sites;
-  if (sites.hostnames.indexOf(hostname) !== -1) {
+  const hostnames = module.context.configuration.sites.hostnames;
+  if (hostnames.indexOf(hostname) !== -1) {
     return {type: "success"};
   } else {
     return {type: "error"};

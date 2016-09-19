@@ -10,6 +10,7 @@
     "main": "main.js",
     "scripts": {
         "setup": "scripts/setup.js",
+        "create-admin": "scripts/admin.js",
         "teardown": "scripts/teardown.js"
     },
     "configuration": {

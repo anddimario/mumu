@@ -2,8 +2,11 @@
 // Service requirements
 const users_routes = require('./routes/users');
 const users_models = require('./models/users');
+const contents_routes = require('./routes/contents');
+const contents_models = require('./models/contents');
 const admins_routes = require('./routes/admins');
 const check_hostname = require('./middlewares/check_hostname');
+const check_admin = require('./middlewares/check_admin');
 
 // Global requirements
 const joi = require('joi');
@@ -26,6 +29,20 @@ module.context.use(function (req, res, next) {
     res.throw(404, 'Not found');
   }
   next();
+});
+// This middleware is used to check admin/superadmin access for a site
+module.context.use(function(req, res, next){
+  var path_root = req.path.split("/");
+  path_root = path_root.filter(function(e){return e}); // remove empty value
+  if (path_root[0] === "admin") {
+    let valid = check_admin(req.session.data.username, req.hostname);
+    if (valid.type === "error") {
+      res.throw('unauthorized');
+    }
+    next();
+  } else {
+    next();
+  }
 });
 
 const router = createRouter();
@@ -70,7 +87,7 @@ router.post('/users', function (req, res) {
   } else {
     // Failed to save the user
     // We'll assume the UniqueConstraint has been violated
-    res.throw('bad request', 'Username already taken', creation.details);
+    res.throw('bad request', creation.details);
   }
 })
 .body(joi.object(users_models.create).required(), 'Credentials')
@@ -141,16 +158,105 @@ router.put('/users/password', function (req, res) {
 .description('Update the user password, user can update only himself.');
 
 /* Admin */
-// TODO:
-//router.get('/admin/users', admins_routes.list);
-//router.get('/admin/users/:username', admins_routes.get);
-//router.post('/admin/users', admins_routes.create);
-//router.put('/admin/users/:username', admins_routes.update);
-//router.delete('/admin/users/:username', admins_routes.delete);
-//router.post('/admin/admins/:username', admins_routes.create_admin);
+// Login
+router.post('/login', function (req, res) {
+  let results = admins_routes.login(req.body, req.hostname);
+  if (results.type === "success") {
+    // Log the user in, store the session, the response gave back the token in X-Session-Id
+    req.session.uid = results.details._key;
+    req.session.data = {username: results.details.username};
+    res.send({success: true});
+  } else {
+    res.throw('unauthorized');
+  }
+})
+.body(joi.object(users_models.login).required(), 'Credentials')
+.description('Login.');
 
-// TODO: Password reset get token
+// Get users list for a site
+router.get('/admin/users', function (req, res) {
+  let informations = admins_routes.list(req.hostname);
+  if (informations.type === "success") {
+    res.send({success: true, user: informations.details});
+  } else {
+    res.throw(400, 'Not found');
+  }
+})
+.header('X-Session-Id', joi.string())
+.pathParam('username', joi.string().required())
+.description('Get users list.');
 
-// TODO: Password reset
+// Get user for a site by username
+router.get('/admin/users/:username', function (req, res) {
+  let informations = users_routes.get(req.params.username, req.hostname);
+  if (informations.type === "success") {
+    res.send({success: true, user: informations.details});
+  } else {
+    res.throw(400, 'Not found');
+  }
+})
+.header('X-Session-Id', joi.string())
+.pathParam('username', joi.string().required())
+.description('Get users list.');
 
-// TODO: Password update
+// Update an user, not an admin
+router.put('/admin/users/:username', function (req, res) {
+  let results = users_routes.update(req.params.username, req.body, req.hostname);
+  if (results.type === "success") {
+    res.send({success: true});
+  } else {
+    res.throw(400, 'Not found');
+  }
+})
+.header('X-Session-Id', joi.string())
+.body(joi.object(users_models.update).required())
+.pathParam('username', joi.string().required())
+.description('Update an user, not an admin.');
+
+// Delete an user, not an admin
+router.delete('/admin/users/:username', function (req, res) {
+  let results = users_routes.delete(req.params.username, req.hostname);
+  if (results.type === "success") {
+    res.send({success: true});
+  } else {
+    res.throw(400, 'Not found');
+  }
+})
+.header('X-Session-Id', joi.string())
+.pathParam('username', joi.string().required())
+.description('Delete an user, not an admin.');
+
+/* Contents */
+// Add a content
+router.post('/contents', function (req, res) {
+  let creation = contents_routes.create(req.session.data.username, req.body, req.hostname);
+  if (creation.type === "success") {
+    res.send({success: true});
+  } else {
+    res.throw('bad request', creation.details);
+  }
+})
+.header('X-Session-Id', joi.string())
+.body(joi.object(contents_models.create).required(), 'Informations')
+.description('Add a content, read and write are a list of group that has access to the content, empty value allow access to all');
+
+// Get content by slug
+router.get('/contents/:slug', function (req, res) {
+  let informations = contents_routes.get(req.params.slug, req.hostname);
+  if (informations.type === "success") {
+    res.send({success: true, content: informations.details});
+  } else {
+    res.throw(400, 'Not found');
+  }
+})
+.header('X-Session-Id', joi.string())
+.pathParam('slug', joi.string().required())
+.description('Get content by slug.');
+
+// Contents list by owner
+
+// Contents list by user role (list the contents accessible to all too), filter on querystring enabled for type and date
+
+// Update content by id
+
+// Remove content by id
