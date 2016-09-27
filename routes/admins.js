@@ -4,8 +4,7 @@ const createAuth = require('@arangodb/foxx/auth');
 const auth = createAuth();
 const users = module.context.collection('users');
 const admins = module.context.collection('admins');
-const	aql	=	require('@arangodb').aql;
-
+const aql = require('@arangodb').aql;
 const db = require('@arangodb').db;
 
 module.exports = {

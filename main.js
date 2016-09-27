@@ -73,7 +73,7 @@ router.get('/users', function (req, res) {
     res.throw(400, 'Not found');
   }
 })
-.header('X-Session-Id', joi.string())
+.header('X-Session-Id', joi.string().required())
 .description('Get informations about the logged user.');
 
 // Create the user
@@ -102,7 +102,7 @@ router.put('/users', function (req, res) {
     res.throw(400, 'Not found');
   }
 })
-.header('X-Session-Id', joi.string())
+.header('X-Session-Id', joi.string().required())
 .body(joi.object(users_models.update).required())
 .description('Update the user, user can update only himself.');
 
@@ -115,7 +115,7 @@ router.delete('/users', function (req, res) {
     res.throw(400, 'Not found');
   }
 })
-.header('X-Session-Id', joi.string())
+.header('X-Session-Id', joi.string().required())
 .description('Delete the user, user can delete only himself.');
 
 // Password reset token, set token
@@ -153,7 +153,7 @@ router.put('/users/password', function (req, res) {
     res.throw(400, 'Not found');
   }
 })
-.header('X-Session-Id', joi.string())
+.header('X-Session-Id', joi.string().required())
 .body(joi.object(users_models.update_password).required())
 .description('Update the user password, user can update only himself.');
 
@@ -182,7 +182,7 @@ router.get('/admin/users', function (req, res) {
     res.throw(400, 'Not found');
   }
 })
-.header('X-Session-Id', joi.string())
+.header('X-Session-Id', joi.string().required())
 .pathParam('username', joi.string().required())
 .description('Get users list.');
 
@@ -195,7 +195,7 @@ router.get('/admin/users/:username', function (req, res) {
     res.throw(400, 'Not found');
   }
 })
-.header('X-Session-Id', joi.string())
+.header('X-Session-Id', joi.string().required())
 .pathParam('username', joi.string().required())
 .description('Get users list.');
 
@@ -208,7 +208,7 @@ router.put('/admin/users/:username', function (req, res) {
     res.throw(400, 'Not found');
   }
 })
-.header('X-Session-Id', joi.string())
+.header('X-Session-Id', joi.string().required())
 .body(joi.object(users_models.update).required())
 .pathParam('username', joi.string().required())
 .description('Update an user, not an admin.');
@@ -222,7 +222,7 @@ router.delete('/admin/users/:username', function (req, res) {
     res.throw(400, 'Not found');
   }
 })
-.header('X-Session-Id', joi.string())
+.header('X-Session-Id', joi.string().required())
 .pathParam('username', joi.string().required())
 .description('Delete an user, not an admin.');
 
@@ -236,7 +236,7 @@ router.post('/contents', function (req, res) {
     res.throw('bad request', creation.details);
   }
 })
-.header('X-Session-Id', joi.string())
+.header('X-Session-Id', joi.string().required())
 .body(joi.object(contents_models.create).required(), 'Informations')
 .description('Add a content, read and write are a list of group that has access to the content, empty value allow access to all');
 
@@ -249,14 +249,51 @@ router.get('/contents/:slug', function (req, res) {
     res.throw(400, 'Not found');
   }
 })
-.header('X-Session-Id', joi.string())
+.header('X-Session-Id', joi.string().required())
 .pathParam('slug', joi.string().required())
 .description('Get content by slug.');
 
-// Contents list by owner
+// Contents list, filter on querystring enabled for owner, all readable, all writeable, content type and date
+router.get('/contents', function (req, res) {
+  let informations = contents_routes.search(req.session.data.username, req.hostname, req.queryParams);
+  if (informations.type === "success") {
+    res.send({success: true, content: informations.details});
+  } else {
+    res.throw('bad request', informations.details);
+  }
+})
+.header('X-Session-Id', joi.string().required())
+.queryParam('owner', joi.boolean(), 'Owner')
+.queryParam('writeable', joi.boolean(), 'Writeable')
+.queryParam('type', joi.string(), 'Type')
+.queryParam('start_date', joi.date().timestamp(), 'Start date')
+.queryParam('end_date', joi.date().timestamp(), 'End date')
+.summary('Filter on querystring enabled for owner {owner: true}, all writeable {writeable: true}, content type {type: "string"} and date {start_date: timestamp_format, end_date: timestamp_format}. If filter is null, show only readable content')
+.description('Contents search.');
 
-// Contents list by user role (list the contents accessible to all too), filter on querystring enabled for type and date
+// Update content by id, if the user is the owner, or an admin/superadmin
+router.put('/contents/:id', function (req, res) {
+  let results = contents_routes.put(req.session.data.username, req.hostname, req.params.id, req.body);
+  if (results.type === "success") {
+    res.send({success: true});
+  } else {
+    res.throw(400, 'Not found');
+  }
+})
+.header('X-Session-Id', joi.string().required())
+.pathParam('id', joi.number().integer().required())
+.body(joi.object(contents_models.update).required(), 'Informations')
+.description('Remove content by id, if the user is the owner, or an admin/superadmin.')
 
-// Update content by id
-
-// Remove content by id
+// Remove content by id, if the user is the owner, or an admin/superadmin
+router.delete('/contents/:id', function (req, res) {
+  let results = contents_routes.delete(req.session.data.username, req.hostname, req.params.id);
+  if (results.type === "success") {
+    res.send({success: true});
+  } else {
+    res.throw(400, 'Not found');
+  }
+})
+.header('X-Session-Id', joi.string().required())
+.pathParam('id', joi.number().integer().required())
+.description('Remove content by id, if the user is the owner, or an admin/superadmin.');

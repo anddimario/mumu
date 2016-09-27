@@ -11,5 +11,13 @@ module.exports = {
     read: joi.string(),
     write: joi.string()
   },
+  update: {
+    slug: joi.string(),
+    title: joi.string(),
+    content: joi.string(),
+    type: joi.string(),
+    read: joi.string(),
+    write: joi.string()
+  }
   
 }
