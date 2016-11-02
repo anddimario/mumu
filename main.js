@@ -82,7 +82,7 @@ router.post('/users', function (req, res) {
   if (creation.type === "success") {
     // Log the user in, store the session, the response gave back the token in X-Session-Id
     req.session.uid = creation.details._key;
-    req.session.data = {username: results.details.username};
+    req.session.data = {username: creation.details.username};
     res.send({success: true});
   } else {
     // Failed to save the user
