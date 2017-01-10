@@ -23,6 +23,6 @@ Ecommerce: https://github.com/anddimario/mumu-ecommerce
 
 # License
 
-Copyright (c) 2016 Andrea Di Mario
+Copyright (c) 2017 Andrea Di Mario
 
 License: MIT
